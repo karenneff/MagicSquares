@@ -47,10 +47,14 @@ void autoRow(int x, int*A, int cornersLeft) { //last number in a row
 		sum += A[ii];
 	int needed = correctSum - sum;
 	int index = -1;
-	for (int ii = x - 1; ii < N*N; ii++)
-		if (A[ii] == needed) index = ii;
+	for (int ii = x - 1; ii < N*N; ii++) {
+		if (A[ii] == needed) {
+			index = ii;
+			break;
+		}
+	}
 	if (index == -1) return;
-	if (x == N) {
+	if (x == N) {  //upper right corner
 		if (A[index] > A[0]) return;
 	}
 	else if (A[index] < A[0] && cornersLeft == 2)return;
@@ -71,24 +75,36 @@ void autoCol(int x, int*A, int cornersLeft) {
 		sum += A[ii];
 	int needed = correctSum - sum;
 	int index = -1;
-	for (int ii = x - 1; ii < N*N; ii++)
-		if (A[ii] == needed) index = ii;
-	if (index == -1) return;
-	if (x == N*(N - 1) + 1) {
-		if (A[index] > A[N - 1]) return;
+	for (int ii = x - 1; ii < N*N; ii++) {
+		if (A[ii] == needed) {
+			index = ii;
+			break;
+		}
 	}
-	else if (A[index] < A[0] && cornersLeft == 1) return;
-	int newLeft = cornersLeft;
-	swap(A, index, x - 1);
-	if(x == N*(N - 1) + 1)
+	if (index == -1) return;
+
+	if (x == N*(N - 1) + 1) {  //lower left corner
+		if (A[index] > A[N - 1]) return;
+		if (A[index] > A[0]) return;
+		swap(A, index, x - 1);
 		if (!checkFirstDiagonal(A)) {
 			swap(A, index, x - 1);
 			return;
 		}
+		autoCol(x + 1, A, cornersLeft - 1);
+		swap(A, index, x - 1);
+		return;
+	}
+
+	//not a corner
+	if (A[index] < A[0] && cornersLeft == 1) return;
+	int newLeft = cornersLeft;
+	swap(A, index, x - 1);	
 	if (A[x - 1] < A[0]) newLeft--;
 	autoCol(x + 1, A, newLeft);
 	swap(A, index, x - 1);
 }
+
 bool checkFirstDiagonal(int* A) {
 	int sum = 0;
 	int x = N - 1;
@@ -103,15 +119,14 @@ void check(int* A) {
 	//check other diagonal
 	for (int ii = 0; ii < N; ii++)
 		sum += A[ii * (N + 1)];
-	if (sum != correctSum) return;
-	print(A); //found a magic square; print so it can be read
+	if (sum == correctSum) print(A); //found a magic square; print so it can be read
 }
 
 void assign(int x, int*A, int cornersLeft) {
 	if (x % N == 0) {	//new row has been completed
 		autoRow(x, A, cornersLeft); return;
 	}
-	else if (x > N * (N - 1)) {
+	else if (x > N * (N - 1)) {  //last row
 		autoCol(x, A, cornersLeft); return;
 	}
 	for (int i = x-1; i < N*N; i++) {
