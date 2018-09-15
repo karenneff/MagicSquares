@@ -46,6 +46,8 @@ int main()
 	return 0;
 }
 
+//Assign different numbers to the top-left corner, 
+//and generate a new thread for each one
 void assignFirst(int*A) {
 	thread** series = new thread*[N * N];
 	for (int ii = 4; ii <= N * N; ii++) //start at 4; avoid rotational repeats
@@ -63,6 +65,7 @@ void assignFirst(int*A) {
 	}
 }
 
+//figure out which assign function to use
 void assign(int x, int*A, int cornersLeft) {
 	if (x > N * (N - 2))  //second-to-last row
 		autoColBasic(x, A);
@@ -72,6 +75,7 @@ void assign(int x, int*A, int cornersLeft) {
 		assignBasic(x, A, cornersLeft);
 }
 
+//Early in the process; next cell could have any remaining number
 void assignBasic(int x, int*A, int cornersLeft) {
 	for (int i = x - 1; i < N*N; i++) {
 		int newLeft = cornersLeft;
@@ -86,7 +90,8 @@ void assignBasic(int x, int*A, int cornersLeft) {
 	}
 }
 
-void autoRow(int x, int*A, int cornersLeft) { //last number in a row
+//Last number in a row; can be calculated based on what is there already
+void autoRow(int x, int*A, int cornersLeft) { 
 	int sum = 0;
 	for (int ii = x - N; ii < x - 1; ii++)
 		sum += A[ii];
@@ -104,6 +109,8 @@ void autoRow(int x, int*A, int cornersLeft) { //last number in a row
 	swap(A, index, x - 1);
 }
 
+//Second-to-last row; choose a number for this cell,
+//then calculate what must go in the cell below it
 void autoColBasic(int x, int*A) {
 	//the very last column
 	if (x == N * (N - 1)) {
@@ -139,6 +146,9 @@ void autoColBasic(int x, int*A) {
 	}
 }
 
+//The last column to be assigned.
+//Second-to-last cell in the column is calculated as auto-row.
+//If successful, last cell need not be checked.
 void autoColFinal(int* A){
 	if (!checkFirstDiagonal(A)) return;
 	if (A[N * (N - 1)] > A[0]) return;
