@@ -28,8 +28,8 @@ void lowerLeftCornerB(int*, int);
 void lowerLeftCornerC(int*, int);
 void lowerLeftCornerD(int*, int);
 void autoColBasic(int, int*);
+void finalizeSize3(int*);
 void autoColFinal(int*);
-bool checkFirstDiagonal(int*);
 bool checkSecondDiagonal(int*);
 void swap(int*, int, int);
 int find(int, int*, int);
@@ -166,7 +166,10 @@ void lowerLeftCornerD(int*A, int cornersLeft) {
 	int index = find(N * (N - 2) + 3, A, needed);
 	if (index == -1 || index % N == 0) return;
 	swap(A, index, N * (N - 1) + 1);
-	autoColBasic(N * (N - 2) + 3, A);
+	if (N == 3)
+		finalizeSize3(A);
+	else
+		autoColBasic(N * (N - 2) + 3, A);
 	swap(A, index, N * (N - 1) + 1);
 }
 
@@ -204,6 +207,22 @@ void autoColBasic(int x, int*A) {
 		if (index != top) swap(A, bottom, index);
 		else swap(A, bottom, i);
 		swap(A, top, i);
+	}
+}
+
+//If the problem size is 3, the lower right corner is treated differently.
+void finalizeSize3(int* A) {
+	int sum1 = A[0] + A[4];
+	int sum2 = A[6] + A[7];
+	if (sum1 != sum2) return;
+	int needed = correctSum - sum1;
+	if (needed > A[0]) return;
+	if (A[8] == needed)
+		print(A);
+	else if (A[5] == needed) {
+		swap(A, 5, 8);
+		print(A);
+		swap(A, 5, 8);
 	}
 }
 
