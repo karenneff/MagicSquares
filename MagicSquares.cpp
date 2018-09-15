@@ -23,6 +23,10 @@ void assignFirst(int*);
 void assign(int, int*, int);
 void assignBasic(int, int*, int);
 void autoRow(int, int*, int);
+void lowerLeftCornerA(int*, int);
+void lowerLeftCornerB(int*, int);
+void lowerLeftCornerC(int*, int);
+void lowerLeftCornerD(int*, int);
 void autoColBasic(int, int*);
 void autoColFinal(int*);
 bool checkFirstDiagonal(int*);
@@ -68,7 +72,7 @@ void assignFirst(int*A) {
 //figure out which assign function to use
 void assign(int x, int*A, int cornersLeft) {
 	if (x > N * (N - 2))  //second-to-last row
-		autoColBasic(x, A);
+		lowerLeftCornerA(A, cornersLeft);
 	else if (x % N == 0)	//new row has been completed
 		autoRow(x, A, cornersLeft);
 	else 
@@ -107,6 +111,63 @@ void autoRow(int x, int*A, int cornersLeft) {
 	if (A[x - 1] < A[0]) newLeft--;
 	assign(x + 1, A, newLeft);
 	swap(A, index, x - 1);
+}
+
+//Actual lower-left corner
+void lowerLeftCornerA(int*A, int cornersLeft) {
+	for (int ii = N * (N - 2); ii < N * N; ii++) {
+		if (A[ii] > A[0] || A[ii] > A[N - 1]) continue;
+		swap(A, ii, N * (N - 1));
+		lowerLeftCornerB(A, cornersLeft - 1);
+		swap(A, ii, N * (N - 1));
+	}
+}
+//Square just above lower-left corner; calculate as autoCol
+void lowerLeftCornerB(int*A, int cornersLeft) {
+	int sum = 0;
+	for (int ii = 0; ii < N * (N - 2); ii += N)
+		sum += A[ii];
+	sum += A[N * (N - 1)];
+	int needed = correctSum - sum;
+	int newLeft = cornersLeft;
+	if (needed < A[0]) newLeft--;
+	if (newLeft <= 0)return;
+	int index = find(N * (N - 2) + 1, A, needed);
+	if (index == -1 || index == N * (N - 1)) return;
+	swap(A, index, N * (N - 2));
+	lowerLeftCornerC(A, newLeft);
+	swap(A, index, N * (N - 2));
+}
+//Square above-right of lower-left corner; calculate based on diagonal
+void lowerLeftCornerC(int*A, int cornersLeft) {
+	int sum = 0;
+	for (int ii = N - 1; ii < N * (N - 2); ii += (N - 1))
+		sum += A[ii];
+	sum += A[N * (N - 1)];
+	int needed = correctSum - sum;
+	int newLeft = cornersLeft;
+	if (needed < A[0]) newLeft--;
+	if (newLeft <= 0)return;
+	int index = find(N * (N - 2) + 2, A, needed);
+	if (index == -1 || index % N == 0) return;
+	swap(A, index, N * (N - 2) + 1);
+	lowerLeftCornerD(A, newLeft);
+	swap(A, index, N * (N - 2) + 1);
+}
+//Square just to the right of lower-left corner; calculate as autoCol
+void lowerLeftCornerD(int*A, int cornersLeft) {
+	int sum = 0;
+	for (int ii = 1; ii < N * (N - 1); ii += N)
+		sum += A[ii];
+	int needed = correctSum - sum;
+	int newLeft = cornersLeft;
+	if (needed < A[0]) newLeft--;
+	if (newLeft <= 0)return;
+	int index = find(N * (N - 2) + 3, A, needed);
+	if (index == -1 || index % N == 0) return;
+	swap(A, index, N * (N - 1) + 1);
+	autoColBasic(N * (N - 2) + 3, A);
+	swap(A, index, N * (N - 1) + 1);
 }
 
 //Second-to-last row; choose a number for this cell,
@@ -150,9 +211,6 @@ void autoColBasic(int x, int*A) {
 //Second-to-last cell in the column is calculated as auto-row.
 //If successful, last cell need not be checked.
 void autoColFinal(int* A){
-	if (!checkFirstDiagonal(A)) return;
-	if (A[N * (N - 1)] > A[0]) return;
-	if (A[N * (N - 1)] > A[N - 1]) return;
 	int top = N * (N - 1) - 1;
 	int bottom = top + N;
 	int sum = 0;
@@ -171,13 +229,6 @@ void autoColFinal(int* A){
 	if (swapNeeded)swap(A, top, bottom);
 }
 
-bool checkFirstDiagonal(int* A) {
-	int sum = 0;
-	int x = N - 1;
-	for (int ii = 0; ii < N; ii++)
-		sum += A[x + ii * (N - 1)];
-	return sum == correctSum;
-}
 bool checkSecondDiagonal(int*A) {
 	int sum = 0;
 	for (int ii = 0; ii < N; ii++)
