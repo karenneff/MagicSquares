@@ -22,7 +22,7 @@ Results are printed to a text file; an example is posted. Each line represents o
 
 This program and its documentation are available as examples of my work and are intended to be used for informational purposes only. Please do not copy or use this code for any other purpose without my permission.
 
-##Update 9/14/2018
+## Update 9/14/2018
 
 Today's refactor offers a big boost in efficiency due to improvements to the autoCol method. Previously, the program would wait until the entire second-to-last row was filled before assigning any numbers to the bottom row. Now, its autoColBasic method will assign a number to the second-to-last square in a column and then immediately calculate the required number for the last square. This means that the last two rows of the magic square are filled together.
 
