@@ -19,17 +19,17 @@ ofstream outfile;
 int currentcount = 0;
 bool printMutex = false;
 
-void assign(int, int*, int);
-void checkFinal(int*);
-bool checkFirstDiagonal(int*);
-void swap(int*, int, int);
-void print(int* A);
-void autoRow(int, int*, int);
-void autoCol(int, int*, int);
-bool checkFirstDiagonal(int*);
-void checkFinal(int*);
-void assign(int, int*, int);
 void assignFirst(int*);
+void assign(int, int*, int);
+void assignBasic(int, int*, int);
+void autoRow(int, int*, int);
+void autoColBasic(int, int*);
+void autoColFinal(int*);
+bool checkFirstDiagonal(int*);
+bool checkSecondDiagonal(int*);
+void swap(int*, int, int);
+int find(int, int*, int);
+void print(int* A);
 
 int main() 
 {
@@ -64,18 +64,22 @@ void assignFirst(int*A) {
 }
 
 void assign(int x, int*A, int cornersLeft) {
-	if (x % N == 0) {	//new row has been completed
-		autoRow(x, A, cornersLeft); return;
-	}
-	else if (x > N * (N - 1)) {  //last row
-		autoCol(x, A, cornersLeft); return;
-	}
+	if (x > N * (N - 2))  //second-to-last row
+		autoColBasic(x, A);
+	else if (x % N == 0)	//new row has been completed
+		autoRow(x, A, cornersLeft);
+	else 
+		assignBasic(x, A, cornersLeft);
+}
+
+void assignBasic(int x, int*A, int cornersLeft) {
 	for (int i = x - 1; i < N*N; i++) {
 		int newLeft = cornersLeft;
-		if (A[i] < A[0])newLeft -= 1;
-		if (x < N && newLeft < 3) return;
-		else if (x < N * (N - 1) && newLeft < 2) return;
-		else if (newLeft < 1) return;
+		if (A[i] < A[0]) {
+			newLeft--;
+		}
+		if (x < N && newLeft < 3) continue;
+		else if (newLeft < 2) continue;
 		swap(A, x - 1, i); //generate all possible arrangements
 		assign(x + 1, A, newLeft);
 		swap(A, x - 1, i);
@@ -87,18 +91,12 @@ void autoRow(int x, int*A, int cornersLeft) { //last number in a row
 	for (int ii = x - N; ii < x - 1; ii++)
 		sum += A[ii];
 	int needed = correctSum - sum;
-	int index = -1;
-	for (int ii = x - 1; ii < N*N; ii++) {
-		if (A[ii] == needed) {
-			index = ii;
-			break;
-		}
-	}
-	if (index == -1) return;
 	if (x == N) {  //upper right corner
-		if (A[index] > A[0]) return;
+		if (needed > A[0]) return;
 	}
-	else if (A[index] < A[0] && cornersLeft == 2)return;
+	else if (needed < A[0] && cornersLeft == 2)return;
+	int index = find(x, A, needed);
+	if (index == -1) return;
 	int newLeft = cornersLeft;
 	swap(A, index, x - 1);
 	if (A[x - 1] < A[0]) newLeft--;
@@ -106,59 +104,75 @@ void autoRow(int x, int*A, int cornersLeft) { //last number in a row
 	swap(A, index, x - 1);
 }
 
-void autoCol(int x, int*A, int cornersLeft) {
-	if (x == N*N) { //complete; accept or reject
-		if (A[0] > A[N*N - 1]) checkFinal(A); //avoid rotational or reflective repeats
+void autoColBasic(int x, int*A) {
+	//the very last column
+	if (x == N * (N - 1)) {
+		autoColFinal(A);
 		return;
 	}
+	int top = x - 1;
+	int bottom = top + N;
+	//first, the second-to-last square in the column...
+	for (int i = top; i < N*N; i++) {
+		while(i % N < top % N) {
+			i++; 
+		}
+		int upperSquare = A[i];
+		//...then, the last square in the column
+		int sum = 0;
+		for (int iter = top % N; iter < top; iter += N)
+			sum += A[iter];
+		sum += upperSquare;
+		int needed = correctSum - sum;
+		if (needed == upperSquare) continue;
+		int index = find(x, A, needed);
+		if (index == -1) continue;
+		if (index % N < top % N) continue;
+		//all conditions met; do the swap
+		swap(A, top, i);
+		if (index != top) swap(A, bottom, index);
+		else swap(A, bottom, i);
+		autoColBasic(x + 1, A);
+		if (index != top) swap(A, bottom, index);
+		else swap(A, bottom, i);
+		swap(A, top, i);
+	}
+}
+
+void autoColFinal(int* A){
+	if (!checkFirstDiagonal(A)) return;
+	if (A[N * (N - 1)] > A[0]) return;
+	if (A[N * (N - 1)] > A[N - 1]) return;
+	int top = N * (N - 1) - 1;
+	int bottom = top + N;
 	int sum = 0;
-	for (int ii = x - 1 - N; ii >= 0; ii -= N)
+	for (int ii = top - N + 1; ii < top; ii++)
 		sum += A[ii];
 	int needed = correctSum - sum;
-	int index = -1;
-	for (int ii = x - 1; ii < N*N; ii++) {
-		if (A[ii] == needed) {
-			index = ii;
-			break;
-		}
+	bool swapNeeded = false;
+	if (A[bottom] == needed) {
+		swapNeeded = true;
 	}
-	if (index == -1) return;
-
-	if (x == N*(N - 1) + 1) {  //lower left corner
-		if (A[index] > A[N - 1]) return;
-		if (A[index] > A[0]) return;
-		swap(A, index, x - 1);
-		if (checkFirstDiagonal(A)) {
-			autoCol(x + 1, A, cornersLeft - 1);
-		}
-		swap(A, index, x - 1);
-		return;
+	else if (A[top] != needed) { 
+		return; 
 	}
-
-	//not a corner
-	if (A[index] < A[0] && cornersLeft == 1) return;
-	int newLeft = cornersLeft;
-	swap(A, index, x - 1);
-	if (A[x - 1] < A[0]) newLeft--;
-	autoCol(x + 1, A, newLeft);
-	swap(A, index, x - 1);
+	if (swapNeeded)swap(A, top, bottom);
+	if (checkSecondDiagonal(A) && A[bottom] < A[0]) print(A);
+	if (swapNeeded)swap(A, top, bottom);
 }
 
 bool checkFirstDiagonal(int* A) {
 	int sum = 0;
 	int x = N - 1;
-	//check first diagonal
 	for (int ii = 0; ii < N; ii++)
 		sum += A[x + ii * (N - 1)];
 	return sum == correctSum;
 }
-
-void checkFinal(int* A) {
+bool checkSecondDiagonal(int*A) {
 	int sum = 0;
-	//check other diagonal
 	for (int ii = 0; ii < N; ii++)
 		sum += A[ii * (N + 1)];
-	if (sum == correctSum) print(A); //found a magic square; print so it can be read
+	return sum == correctSum;
 }
 
 void swap(int* A, int pos1, int pos2) {
@@ -166,6 +180,13 @@ void swap(int* A, int pos1, int pos2) {
 	int temp = A[pos2];
 	A[pos2] = A[pos1];
 	A[pos1] = temp;
+}
+
+int find(int x, int* A, int needed) {
+	for (int ii = x - 1; ii < N*N; ii++) {
+		if (A[ii] == needed) return ii;
+	}
+	return -1;
 }
 
 void print(int* A)
